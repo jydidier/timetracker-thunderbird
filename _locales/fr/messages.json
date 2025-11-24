@@ -1,0 +1,10 @@
+{
+    "extensionName": {
+        "message": "TimeTracker - suivi des activités avec iCAL",
+        "description": "Nom de l'extension"
+    },
+    "extensionDescription": {
+        "message": "Outil simple de suivi des activités",
+        "description": "Description de l'extension"
+    }
+}

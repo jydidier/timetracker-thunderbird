@@ -1,0 +1,10 @@
+{
+    "extensionName": {
+        "message": "TimeTracker - time tracker with iCAL",
+        "description": "Name of the extension"
+    },
+    "extensionDescription": {
+        "message": "Simple timetracker",
+        "description": "Description of the extension"
+    }
+}
