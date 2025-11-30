@@ -6,5 +6,119 @@
     "extensionDescription": {
         "message": "Outil simple de suivi des activités",
         "description": "Description de l'extension"
+    },
+    "settingsButton": {
+        "message": " Paramètres",
+        "description": "Nom du bouton paramètres"
+    },
+    "newTaskButton": {
+        "message" : " Nouvelle tâche...",
+        "description" : "Nom du bouton nouvelle tâche"
+    },
+    "refreshButton": {
+        "message" : " Actualiser",
+        "description" : "Nom du bouton actualiser"
+    },
+    "helpButton": {
+        "message" : " Aide",
+        "description" : "Nom du bouton aide"
+    },
+    "settingsModalHeader": {
+        "message": "Paramètres",
+        "description": "Nom de la boîte de dialogue paramètres"
+    },
+    "taskModalHeader": {
+        "message": "Nouvelle tâche",
+        "description": "En tête de la boîte de dialogue nouvelle tâche"
+    },
+    "titleField" : {
+        "message" : "Intitulé",
+        "description" : "Nom du champ donnant l'intitulé d'une tâche"
+    },
+    "startDateField": {
+        "message": "Début",
+        "description": "Nom du champ de la date de début"
+    },    
+    "dueDateField" : {
+        "message" : "Fin",
+        "description" : "Nom du champ de la date de fin"
+    },
+    "descriptionField" : {
+        "message" : "Description",
+        "description" : "Nom du champ description"
+    },
+    "closeButton" : {
+        "message" : "Quitter",
+        "description" : "Nom du bouton quitter"
+    },
+    "saveButton" : {
+        "message" : "Enregistrer",
+        "description" : "Nom du bouton enregistrer"
+    },
+    "applyButton" : {
+        "message" : "Appliquer",
+        "description" : "Nom du bouton appliquer"
+    },
+    "updateFrequencyField": {
+        "message": "Fréquence de mise à jour",
+        "description": "Label pour le champ de fréquence de mise à jour"
+    },
+    "none" : {
+        "message": "Aucune",
+        "description": "option pour aucune mise à jour"
+    },
+    "oneMinute": {
+        "message": "1 minute",
+        "descrption": "1m option"
+    },
+    "fiveMinutes" : {
+        "message": "5 minutes",
+        "description": "5m option"
+    },
+    "tenMinutes" : {
+        "message": "10 minutes",
+        "description": "10m option"
+    },
+    "fifteenMinutes" : {
+        "message": "15 minutes",
+        "description": "15m option"
+    },
+    "thirtyMinutes" : {
+        "message": "30 minutes",
+        "description": "30m option"
+    },
+    "oneHour": {
+        "message": "1 heure",
+        "description": "1h option"
+    },
+    "twoHours": {
+        "message": "2 heures",
+        "description": "2h option"
+    },
+    "calendarCapabilityLabel" : {
+        "message" : "Seulement les calendriers supportant les tâches",
+        "description" : "Label pour les calendriers supportant les tâches"
+    },
+    "allCalendarsLabel" : {
+        "message" : "Tous les calendriers ci-dessous",
+        "description" : "Label pour la bascule concernant tous les calendriers"
+    },
+    "helpHeader" : {
+        "message" : "Comment utiliser timetracker ?",
+        "description" : "En tête de la fenêtre d'aide"
+    },
+    "help1" : {
+        "message" : "",
+        "description" : "First paragraph of help modal dialog"
+    },
+    "help2" : {
+        "message" : "",
+        "description" : "Second paragraph of help modal dialog"
+    },
+    "help3" : {
+        "message" : "",
+        "description" : "Third paragraph of help modal dialog"
     }
+
+
 }

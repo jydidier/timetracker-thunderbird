@@ -6,5 +6,119 @@
     "extensionDescription": {
         "message": "Simple timetracker",
         "description": "Description of the extension"
+    },
+    "settingsButton": {
+        "message": " Settings",
+        "description": "Name of the settings button"
+    },
+    "newTaskButton": {
+        "message" : " New task...",
+        "description" : "Name of the new task button"
+    },
+    "refreshButton": {
+        "message" : " Refresh",
+        "description" : "Name of the refresh button"
+    },
+    "helpButton": {
+        "message" : " Help",
+        "description" : "Name of the help button"
+    },
+    "settingsModalHeader": {
+        "message": "Settings",
+        "description": "Name of the header of the settings modal"
+    },
+    "taskModalHeader": {
+        "message": "New task...",
+        "description": "Header of the new task modal dialog"
+    },
+    "titleField" : {
+        "message" : "Title",
+        "description" : "Name of the title field of a task"
+    },
+    "startDateField": {
+        "message": "Start",
+        "description": "Name of the task start date field"
+    },    
+    "dueDateField" : {
+        "message" : "Due date",
+        "description" : "Name of the due date field of a task"
+    },
+    "descriptionField" : {
+        "message" : "Description",
+        "description" : "Name of the description field"
+    },
+    "closeButton" : {
+        "message" : "Close",
+        "description" : "Name of the close button"
+    },
+    "saveButton" : {
+        "message" : "Save",
+        "description" : "Name of the save button"
+    },
+    "applyButton" : {
+        "message" : "Apply",
+        "description" : "Name of the apply button"
+    },
+    "updateFrequencyField": {
+        "message": "Update frequency",
+        "description": "Label for update frequency field"
+    },
+    "none": {
+        "message": "None",
+        "description": "None option"
+    },
+    "oneMinute": {
+        "message": "1 minute",
+        "descrption": "1m option"
+    },
+    "fiveMinutes" : {
+        "message": "5 minutes",
+        "description": "5m option"
+    },
+    "tenMinutes" : {
+        "message": "10 minutes",
+        "description": "10m option"
+    },
+    "fifteenMinutes" : {
+        "message": "15 minutes",
+        "description": "15m option"
+    },
+    "thirtyMinutes" : {
+        "message": "30 minutes",
+        "description": "30m option"
+    },
+    "oneHour": {
+        "message": "1 hour",
+        "description": "1h option"
+    },
+    "twoHours": {
+        "message": "2 hours",
+        "description": "2h option"
+    },
+    "calendarCapabilityLabel" : {
+        "message" : "Only calendars managing tasks",
+        "description" : "Label for checking calendar capabilities"
+    },
+    "allCalendarsLabel" : {
+        "message" : "All calendars below",
+        "description" : "Label for all calendars switch"
+    },
+    "helpHeader" : {
+        "message" : "How to use the Kanban board",
+        "description" : "Header of the help modal dialog"
+    },
+    "help1" : {
+        "message" : "",
+        "description" : "First paragraph of help modal dialog"
+    },
+    "help2" : {
+        "message" : "",
+        "description" : "Second paragraph of help modal dialog"
+    },
+    "help3" : {
+        "message" : "",
+        "description" : "Third paragraph of help modal dialog"
     }
+
+
 }

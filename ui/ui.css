@@ -1,0 +1,32 @@
+/* main layout of our kanban */
+
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+}
+
+.text-ellipsis {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-height: 3lh;
+}
+
+.title-ellipsis {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.kanban-item {
+    margin: 3px;
+}
+
+.card-children {
+    margin-left: 2em;
+}
+
+.required::after {
+    content: " * ";
+    color: darkred;
+}
