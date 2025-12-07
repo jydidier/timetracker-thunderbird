@@ -7,6 +7,10 @@
         "message": "Outil simple de suivi des activités",
         "description": "Description de l'extension"
     },
+    "boardTitle" : {
+        "message" : "Timetracker",
+        "description": "Nom de la page timetracker"
+    },
     "settingsButton": {
         "message": " Paramètres",
         "description": "Nom du bouton paramètres"
@@ -26,6 +30,10 @@
     "settingsModalHeader": {
         "message": "Paramètres",
         "description": "Nom de la boîte de dialogue paramètres"
+    },
+    "calendarsFilter": {
+        "message": "Calendrier courant",
+        "description": "Titre de la section concernant le choix du calendrier"
     },
     "taskModalHeader": {
         "message": "Nouvelle tâche",

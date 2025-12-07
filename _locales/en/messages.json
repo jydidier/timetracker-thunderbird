@@ -7,6 +7,10 @@
         "message": "Simple timetracker",
         "description": "Description of the extension"
     },
+    "boardTitle" : {
+        "message" : "Timetracker",
+        "description": "Name of the timetracker page"
+    },
     "settingsButton": {
         "message": " Settings",
         "description": "Name of the settings button"
@@ -26,6 +30,10 @@
     "settingsModalHeader": {
         "message": "Settings",
         "description": "Name of the header of the settings modal"
+    },
+    "calendarsFilter": {
+        "message": "Current calendar",
+        "description": "Title of current calendar section"
     },
     "taskModalHeader": {
         "message": "New task...",

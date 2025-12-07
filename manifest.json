@@ -15,6 +15,7 @@
     },
     "action": {
         "default_title": "TimeTracker",
+        "default_icon": "images/timetracker_32x32.png",
         "allowed_spaces": []
     },
     "background": {
@@ -24,6 +25,7 @@
         "type": "module"
     },
     "icons": {
+        "32": "images/timetracker_32x32.png"
     },
     "experiment_apis" : {
         "calendar_calendars" : {

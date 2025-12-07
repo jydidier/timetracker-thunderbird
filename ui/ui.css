@@ -7,26 +7,15 @@ body {
     height: 100vh;
 }
 
-.text-ellipsis {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    max-height: 3lh;
-}
-
-.title-ellipsis {
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-.kanban-item {
-    margin: 3px;
-}
-
-.card-children {
-    margin-left: 2em;
-}
-
 .required::after {
     content: " * ";
     color: darkred;
+}
+
+details {
+    font-size: 110%;
+}
+
+details > summary {
+    font-size: 110%;
 }

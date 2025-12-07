@@ -13,6 +13,7 @@
                 <nav class="navbar navbar-expand-lg">
                     <div class="container-fluid">
                         <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#settingsModal" data-i18n="settingsButton"><i class="bi-gear-fill"></i></button>
+                        
                         <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#taskModal" data-i18n="newTaskButton"><i class="bi-calendar-plus-fill"></i></button>
                         <button class="btn btn-outline-secondary" data-i18n="refreshButton" id="refreshButton"><i class="bi-arrow-clockwise"></i></button>
                         <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#helpModal" data-i18n="helpButton"><i class="bi-question-circle-fill"></i></button>
@@ -20,7 +21,7 @@
                 </nav>
             </div>
 
-            <div class="row h-100" >
+            <div id="taskList" class="row h-100" >
             </div>
         </div>
 
@@ -38,10 +39,6 @@
                             <div class ="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch" id="calendarCapability" checked/>
                                 <label class="form-check-label" for="calendarBehaviour" data-i18n="calendarCapabilityLabel"></label>
-                            </div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="allCalendars" checked/>
-                                <label class="form-check-label" for="allCalendars" data-i18n="allCalendarsLabel"></label>
                             </div>
                             <div id="calendarList">
 
