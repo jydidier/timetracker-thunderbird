@@ -151,7 +151,8 @@ const saveTask = async (evt) => {
     let title = document.getElementById('taskTitle').value;
     let description = document.getElementById('taskDescription').value;
 
-    let id = "null";
+    //let source = evt.target;
+    let id = "null"; //evt.target.dataset.event;
     let item = (id !== "null") ?
         asTodo(await mc.items.get(calendarId, id, { returnFormat: "jcal" })) :
         new JCAL.Todo();
@@ -170,7 +171,7 @@ const saveTask = async (evt) => {
     let modal = bootstrap.Modal.getInstance(document.getElementById("taskModal"));
     modal.hide();
 
-    await populateTasks();
+    //await populateTasks();
 };
 
 saveTaskButton.addEventListener('click', saveTask);
@@ -178,7 +179,6 @@ saveTaskButton.addEventListener('click', saveTask);
 
 /* board display */
 let getElapsedTime  = (task) => {
-    //item.due = (new Date(dueDate)).toISOString(); 
     let duration = 0;
 
     task.timeSlices.forEach((item) => {
@@ -196,11 +196,22 @@ let getElapsedTime  = (task) => {
     return duration;
 };
 
+
+let removeTask = async (task) => {
+    task.timeSlices.forEach((item) => {
+        await mc.items.remove(calendarId,item.uid);
+    });
+    task.children.forEach((item) => {
+        await removeTask(item);
+    });
+};
+
+
 let displayElapsedTime = (elt, value) => {
     // here, the value is in milliseconds
     let hh = ((value / 3600000) | 0);
-    let mm = (((value - (hh*3600)) / 1000) | 0) % 60;
-    let ss = (((value - (hh*3600) - mm*60) / 1000 ) | 0 );
+    let mm = ((value / 1000 - hh*3600) | 0) % 60;
+    let ss = ((value / 1000 - hh*3600 - mm*60) | 0 );
 
     elt.textContent = `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;
 };
@@ -209,7 +220,6 @@ let displayElapsedTime = (elt, value) => {
 let startStopEvent = async(evt) => {
     let source = evt.target;
     let id = source.dataset.event;
-    console.log("entry", tasks.get(id));
 
     if (source.classList.contains("bi-play-fill")) {
         let event = new JCAL.Todo();
@@ -221,7 +231,6 @@ let startStopEvent = async(evt) => {
         let result = await mc.items.create(calendarId, {
             type: 'task', format: 'jcal', item: event.data
         });
-        console.log({event,result});
         event.uid = result.id;
         tasks.get(id).timeSlices.set(result.id, event);
         // TODO: schedule updates
@@ -234,7 +243,6 @@ let startStopEvent = async(evt) => {
                 event.uid = uid = v.uid;
                 v.status = event.status = "COMPLETED";
                 v.due = event.due = new Date().toISOString();
-                console.log(v.data);
             }
         });
 
@@ -247,8 +255,6 @@ let startStopEvent = async(evt) => {
         }
     }
 
-    console.log("end", tasks.get(id));
-
     let timeDisplay = document.getElementById(`duration-${id}`);
     let duration = getElapsedTime(tasks.get(id));
     displayElapsedTime(timeDisplay, duration);
@@ -258,17 +264,21 @@ let startStopEvent = async(evt) => {
     evt.preventDefault();
 };
 
+
 let addSubTask = async(evt) => {
+    let source = evt.target;
+    let id = source.dataset.event;
 
     evt.preventDefault();
 };
 
+
 let deleteTask = async(evt) => {
-
-
+    let source = evt.target;
+    let id = source.dataset.event;
+    await removeTask(source);
     evt.preventDefault();
-}
-
+};
 
 
 let processMap = async(map, elt) => {
@@ -291,7 +301,9 @@ let processMap = async(map, elt) => {
         details.appendChild(summary);
         summary.querySelector(`#play-${k}`).addEventListener("click",startStopEvent);
 
-
+        let timeDisplay = summary.querySelector(`#duration-${id}`);
+        let duration = getElapsedTime(tasks.get(id));
+        displayElapsedTime(timeDisplay, duration);
 
         if (v.children.size > 0) {
             processMap(v.children, details);
@@ -337,9 +349,11 @@ populateTasks = async () => {
         todoStack.forEach(elt => {
             if (elt.relatedTo || elt.xIcanbanParent) {
                 if (elt.status === 'NEEDS-ACTION') {
-                    tasks.get(elt.relatedTo ?? elt.xIcanbanParent).children.set(elt.uid, elt);
+                    tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
+                        .children.set(elt.uid, elt);
                 } else {
-                    tasks.get(elt.relatedTo ?? elt.xIcanbanParent).timeSlices.set(elt.uid, elt);
+                    tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
+                        .timeSlices.set(elt.uid, elt);
                 }
             }        
         });
@@ -349,15 +363,19 @@ populateTasks = async () => {
 updateFrequency = await getStorage("timetracker-update-frequency") ?? {};
 calendarId = await getStorage("timetracker-calendar") ?? {};
 
-await populateTasks();
-updateBoard();
+let refresh = async () => {
+    await populateTasks();
+    updateBoard();
+};
+
+refresh();
 
 if (globalThis.messenger !== undefined) {
-    mc.items.onCreated.addListener(populateTasks);
-    mc.items.onUpdated.addListener(populateTasks);
-    mc.items.onRemoved.addListener(populateTasks);
+    mc.items.onCreated.addListener(refresh);
+    mc.items.onUpdated.addListener(refresh);
+    mc.items.onRemoved.addListener(refresh);
 } else {
-    mc.items.addEventListener("created",populateTasks);
-    mc.items.addEventListener("updated",populateTasks);
-    mc.items.addEventListener("removed",populateTasks);
+    mc.items.addEventListener("created", refresh);
+    mc.items.addEventListener("updated", refresh);
+    mc.items.addEventListener("removed", refresh);
 }
