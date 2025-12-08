@@ -18,6 +18,7 @@ let mc = (globalThis.messenger !== undefined) ?
 let capability = {};
 let calendarId = null;
 let updateFrequency = -1;
+let populateTasks = async () => {};
 
 let tasks = new Map();
 let taskTree = new Map();
@@ -168,35 +169,92 @@ const saveTask = async (evt) => {
     }
     let modal = bootstrap.Modal.getInstance(document.getElementById("taskModal"));
     modal.hide();
+
+    await populateTasks();
 };
 
 saveTaskButton.addEventListener('click', saveTask);
 
 
 /* board display */
-let getElapsedTime  = async(task) => {
+let getElapsedTime  = (task) => {
     //item.due = (new Date(dueDate)).toISOString(); 
     let duration = 0;
 
     task.timeSlices.forEach((item) => {
-        duration += new Date(item.due) - new Date(item.dtstart);
+        if (item !== null) {
+            console.log,(item.due, item.dtstart,new Date(item.due) - new Date(item.dtstart) );
+            duration += new Date(item.due) - new Date(item.dtstart);
+        }
     });
     
     task.children.forEach((item) => {
-        duration += getElapsedTime(item);
+        if (item !== null)
+            duration += getElapsedTime(item);
     });
 
     return duration;
 };
 
+let displayElapsedTime = (elt, value) => {
+    // here, the value is in milliseconds
+    let hh = ((value / 3600000) | 0);
+    let mm = (((value - (hh*3600)) / 1000) | 0) % 60;
+    let ss = (((value - (hh*3600) - mm*60) / 1000 ) | 0 );
+
+    elt.textContent = `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;
+};
+
+
 let startStopEvent = async(evt) => {
     let source = evt.target;
-    console.log(source);
     let id = source.dataset.event;
+    console.log("entry", tasks.get(id));
+
+    if (source.classList.contains("bi-play-fill")) {
+        let event = new JCAL.Todo();
+        event.summary = tasks.get(id).summary;
+        event.status = "IN-PROCESS";
+        event.dtstart = new Date().toISOString();
+        event.due = new Date().toISOString();
+        event.xIcanbanParent = event.relatedTo = id;
+        let result = await mc.items.create(calendarId, {
+            type: 'task', format: 'jcal', item: event.data
+        });
+        console.log({event,result});
+        event.uid = result.id;
+        tasks.get(id).timeSlices.set(result.id, event);
+        // TODO: schedule updates
+    } else {
+        // event update: does async do damageable things in timeSlices?
+        let event = new JCAL.Todo();
+        let uid = '';
+        tasks.get(id).timeSlices.forEach((v) => {
+            if (v.status === "IN-PROCESS") {
+                event.uid = uid = v.uid;
+                v.status = event.status = "COMPLETED";
+                v.due = event.due = new Date().toISOString();
+                console.log(v.data);
+            }
+        });
+
+        if (uid) {
+            console.log(event.data);
+            await mc.items.update(calendarId, uid, {
+                format: 'jcal', 
+                item: event.data
+            });
+        }
+    }
+
+    console.log("end", tasks.get(id));
+
+    let timeDisplay = document.getElementById(`duration-${id}`);
+    let duration = getElapsedTime(tasks.get(id));
+    displayElapsedTime(timeDisplay, duration);
 
     source.classList.toggle("bi-play-fill");
     source.classList.toggle("bi-stop-fill");
-
     evt.preventDefault();
 };
 
@@ -223,14 +281,13 @@ let processMap = async(map, elt) => {
         details.id = `details-${k}`;
         summary.insertAdjacentHTML("beforeend",`
                     ${v.summary}
-
+                    <span id="duration-${k}"></span>
                     <span>
-                    <a class="bi-play-fill data-event="${k}" id="play-${k}"></a>
-                    <a class="bi-trash3-fill" data-event="${k}" id="delete-${k}"></a>
-                    <a class="bi-plus-lg" data-event="${k}" id="add-${k}"></a>
+                        <a class="bi-play-fill" data-event="${k}" id="play-${k}"></a>
+                        <a class="bi-trash3-fill" data-event="${k}" id="delete-${k}"></a>
+                        <a class="bi-plus-lg" data-event="${k}" id="add-${k}"></a>
                     </span>
-        `
-        );
+        `);
         details.appendChild(summary);
         summary.querySelector(`#play-${k}`).addEventListener("click",startStopEvent);
 
@@ -251,7 +308,8 @@ let updateBoard = async() => {
 
 /* task loading */
 
-let populateTasks = async () => {
+populateTasks = async () => {
+    console.log("populate tasks");
     if (calendarId === null) return;
     let items = await mc.items.query({
         type: "task", 
@@ -259,34 +317,33 @@ let populateTasks = async () => {
         calendarId
     });
     let todoStack = [];
-    console.log(items);
+    taskTree.clear();
+    tasks.clear();
 
     items.forEach(item => {
         let todo = asTodo(item);
-        console.log(todo);
         todo.children = new Map();
         todo.timeSlices = new Map();
 
         tasks.set(todo.uid, todo);
 
-        if (todo.relatedTo) {
+        // something is strange there, especially in case of synchronisation error
+        if (todo.relatedTo || todo.xIcanbanParent) {
             todoStack.push(todo);
         } else {
             taskTree.set(todo.uid, todo);
         }
 
         todoStack.forEach(elt => {
-            if (elt.has(elt.relatedTo)) {
+            if (elt.relatedTo || elt.xIcanbanParent) {
                 if (elt.status === 'NEEDS-ACTION') {
-                    tasks.get(elt.relateTo).children.set(elt.uid, elt);
+                    tasks.get(elt.relatedTo ?? elt.xIcanbanParent).children.set(elt.uid, elt);
                 } else {
-                    tasks.get(elt.relatedTo).timeSlice.set(elt.uid, elt);
+                    tasks.get(elt.relatedTo ?? elt.xIcanbanParent).timeSlices.set(elt.uid, elt);
                 }
             }        
         });
     });
-
-
 };
 
 updateFrequency = await getStorage("timetracker-update-frequency") ?? {};
