@@ -91,7 +91,9 @@ if (settingsModal) {
         let calendarCapability = document.getElementById('calendarCapability');
         let updateFrequencyField = document.getElementById('updateFrequency');
 
-        updateFrequencyField.value = updateFrequency;
+        //updateFrequencyField.value = String(updateFrequency);
+
+        document,querySelector(`#updateFrequency input[value="${updateFrequency}"]`).selected = true;
 
         populateCalendars(calendars, calList); 
         
@@ -198,19 +200,30 @@ let getElapsedTime  = (task) => {
 
 
 let removeTask = async (task) => {
-    task.timeSlices.forEach((item) => {
+    task.timeSlices.forEach(async (item) => {
         await mc.items.remove(calendarId,item.uid);
     });
-    task.children.forEach((item) => {
+    task.children.forEach(async (item) => {
         await removeTask(item);
     });
 };
 
 
+let getDate = () => {
+    let date = new Date();
+
+    return String(date.getFullYear()).padStart(4,"0") + "-" +
+        String(date.getMonth()).padStart(2,"0") + "-" +
+        String(date.getDate()).padStart(2,"0") + "T" +
+        String(date.getHours()).padStart(2,"0") + ":" +
+        String(date.getMinutes()).padStart(2,"0") + ":" +
+        String(date.getSeconds()).padStart(2,"0");
+};
+
 let displayElapsedTime = (elt, value) => {
     // here, the value is in milliseconds
     let hh = ((value / 3600000) | 0);
-    let mm = ((value / 1000 - hh*3600) | 0) % 60;
+    let mm = ((value / 1000 - hh*3600) / 60 | 0);
     let ss = ((value / 1000 - hh*3600 - mm*60) | 0 );
 
     elt.textContent = `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;
@@ -225,8 +238,9 @@ let startStopEvent = async(evt) => {
         let event = new JCAL.Todo();
         event.summary = tasks.get(id).summary;
         event.status = "IN-PROCESS";
-        event.dtstart = new Date().toISOString();
-        event.due = new Date().toISOString();
+        event.dtstart = getDate(); 
+        event.due = getDate(); 
+
         event.xIcanbanParent = event.relatedTo = id;
         let result = await mc.items.create(calendarId, {
             type: 'task', format: 'jcal', item: event.data
@@ -236,18 +250,18 @@ let startStopEvent = async(evt) => {
         // TODO: schedule updates
     } else {
         // event update: does async do damageable things in timeSlices?
-        let event = new JCAL.Todo();
         let uid = '';
         tasks.get(id).timeSlices.forEach((v) => {
             if (v.status === "IN-PROCESS") {
-                event.uid = uid = v.uid;
-                v.status = event.status = "COMPLETED";
-                v.due = event.due = new Date().toISOString();
+                uid = v.uid;
             }
         });
 
         if (uid) {
-            console.log(event.data);
+            let event = tasks.get(uid);
+            event.status = "COMPLETED";
+            event.due = getDate(); 
+
             await mc.items.update(calendarId, uid, {
                 format: 'jcal', 
                 item: event.data
@@ -300,9 +314,10 @@ let processMap = async(map, elt) => {
         `);
         details.appendChild(summary);
         summary.querySelector(`#play-${k}`).addEventListener("click",startStopEvent);
+        summary.querySelector(`#delete-${k}`).addEventListener("click",deleteTask);
 
-        let timeDisplay = summary.querySelector(`#duration-${id}`);
-        let duration = getElapsedTime(tasks.get(id));
+        let timeDisplay = summary.querySelector(`#duration-${k}`);
+        let duration = getElapsedTime(tasks.get(k));
         displayElapsedTime(timeDisplay, duration);
 
         if (v.children.size > 0) {
@@ -368,14 +383,19 @@ let refresh = async () => {
     updateBoard();
 };
 
+
+let mock = async(item) => {
+    console.log("mock",item);
+};
+
 refresh();
 
 if (globalThis.messenger !== undefined) {
-    mc.items.onCreated.addListener(refresh);
-    mc.items.onUpdated.addListener(refresh);
-    mc.items.onRemoved.addListener(refresh);
+    mc.items.onCreated.addListener(populateTasks);
+    //mc.items.onUpdated.addListener(populateTasks);
+    mc.items.onRemoved.addListener(populateTasks);
 } else {
-    mc.items.addEventListener("created", refresh);
-    mc.items.addEventListener("updated", refresh);
-    mc.items.addEventListener("removed", refresh);
+    mc.items.addEventListener("created", populateTasks);
+    mc.items.addEventListener("updated", populateTasks);
+    mc.items.addEventListener("removed", populateTasks);
 }
