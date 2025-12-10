@@ -6,21 +6,54 @@ class TaskManager extends EventTarget {
     #tasks = new Map();
     #taskTree = new Map();
     #calId = null;
+    #calendarManager;
 
     constructor(items) {
         this.refreshAllTasks(items);
     }
 
+    setCalendarManager(cm) {
+        this.#calendarManager = cm;
+    }
+
+    initTask(obj) {
+
+
+    }
+
+    startTask(uid) {
+
+
+    }
+
+    stopTask(uid) {
+
+    }
+
+
+    updateTask(uid, obj) {
+        let task = this.#tasks.get(uid);
+        Object.apply(task,obj);
+        if (task === undefined) 
+            return;
+
+        this.#emitUpdated(task);
+    }
+
 
     deleteTask(uid) {
         let task = this.#tasks.get(uid);
+        if (task === undefined)
+            return ;
 
         task.timeSlices.forEach((item) => {
-            this.#emitCreated(item);
+            this.#emitDeleted(item);
         });
         task.children.forEach((item) => {
-            await removeTask(item)
+            deleteTask(item)
         });
+
+        this.#emitDeleted(task);
     }
 
     getElapsedTime(uid) {
@@ -98,15 +131,15 @@ class TaskManager extends EventTarget {
     };
 
     #emitCreated(item) {
-        this.dispatchEvent(new CustomEvent("create", { item });
+        this.dispatchEvent(new CustomEvent("create", { item }));
     }
 
     #emitUpdated(item) {
-        this.dispatchEvent(new CustomEvent("update", { item });
+        this.dispatchEvent(new CustomEvent("update", { item }));
     }
 
     #emitDeleted(item) {
-        this.dispatchEvent(new CustomEvent("delete", { item });
+        this.dispatchEvent(new CustomEvent("delete", { item }));
     }
 
 };

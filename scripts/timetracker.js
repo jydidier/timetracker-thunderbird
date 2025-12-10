@@ -10,6 +10,7 @@ import './i18n.js';
 
 import * as JCAL from './jcal.js';
 import {marked} from '../vendor/marked.esm.js';
+import {TimeTracker} from './timetracker.js'; 
 
 let mc = (globalThis.messenger !== undefined) ?
     messenger.calendar:(await import('./calendar_front.js'));
