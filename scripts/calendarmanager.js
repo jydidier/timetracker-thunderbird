@@ -8,6 +8,14 @@ class CalendarManager {
         this.#id = id;
     }
 
+    setId(id) {
+        this.#id = id;
+    }
+
+    async getCalendars(capability) {
+        return await mc.calendars.query(capability);
+    }
+
     async getTasks() {
         return await mc.items.query({
                 type: "task", 
@@ -31,6 +39,28 @@ class CalendarManager {
     }
 
     async deleteTask(task) {
-
+        await mc.items.delete(this.#id, task.uid);
     }
+
+    onCreated(callback) {
+        if (globalThis.messenger !== undefined) 
+            mc.items.onCreated.addListener(callback);
+        else 
+            mc.items.addEventListener("created", callback);
+    }
+
+    onUpdated(callback) {
+        if (globalThis.messenger !== undefined) 
+            mc.items.onUpdated.addListener(callback);
+        else 
+            mc.items.addEventListener("updated", callback);
+    }
+    onRemoved(callback) {
+        if (globalThis.messenger !== undefined) 
+            mc.items.onDeleted.addListener(callback);
+        else 
+            mc.items.addEventListener("removed", callback);
+    }
+
+
 };

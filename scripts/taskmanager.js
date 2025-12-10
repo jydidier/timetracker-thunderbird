@@ -8,8 +8,8 @@ class TaskManager extends EventTarget {
     #calId = null;
     #calendarManager;
 
-    constructor(items) {
-        this.refreshAllTasks(items);
+    constructor() {
+        //this.refreshAllTasks(items);
     }
 
     setCalendarManager(cm) {
@@ -89,10 +89,13 @@ class TaskManager extends EventTarget {
     }
 
 
-    refreshAllTasks(items) {
+    async refreshAllTasks() {
+        if (!cm) return ;
         const taskStack = [];
         this.#taskTree.clear();
         this.#tasks.clear();
+
+        let items = await cm.getTasks();
 
         items.forEach(item => {
             let todo = this.asTodo(item);

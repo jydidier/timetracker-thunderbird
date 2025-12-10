@@ -10,10 +10,8 @@ import './i18n.js';
 
 import * as JCAL from './jcal.js';
 import {marked} from '../vendor/marked.esm.js';
-import {TimeTracker} from './timetracker.js'; 
-
-let mc = (globalThis.messenger !== undefined) ?
-    messenger.calendar:(await import('./calendar_front.js'));
+import {TaskManager} from './taskmanager.js'; 
+import {CalendarManager} from './calendarmanager.js';
 
 
 let capability = {};
@@ -21,10 +19,10 @@ let calendarId = null;
 let updateFrequency = -1;
 let populateTasks = async () => {};
 
-let tasks = new Map();
-let taskTree = new Map();
-let interval = null;
+const calendarManager = new CalendarManager(calendarId);
+const taskManager = new TaskManager();
 
+let interval = null;
 
 
 /* helper functions */
@@ -47,23 +45,10 @@ let getStorage = async (key) => {
     }
 };
 
-const asTodo = (item) => {
-    if (item.formats){
-        const cmp = new JCAL.Component(item.formats.jcal);
-        return cmp.first('vtodo');
-    }
-    if (item.format === 'jcal') {
-        const cmp = new JCAL.Component(item.item);
-        return cmp.first('vtodo');
-    }
-    return null;
-};
-
 
 /* Modal setup for setting */
 const settingsModal = document.getElementById('settingsModal');
 const saveSettings = document.getElementById('saveSettings');
-
 
 
 let populateCalendars = (calendars, filterList) => {
@@ -87,7 +72,7 @@ let populateCalendars = (calendars, filterList) => {
 
 if (settingsModal) {
     settingsModal.addEventListener('show.bs.modal', async (event) => {
-        let calendars = await mc.calendars.query(capability);
+        let calendars = await calendarManager.getCalendars(capability);
         let calList = document.getElementById('calendarList');
         let calendarCapability = document.getElementById('calendarCapability');
         let updateFrequencyField = document.getElementById('updateFrequency');
@@ -106,7 +91,7 @@ if (settingsModal) {
 
         calendarCapability.addEventListener('change', async (event) => {
             capability = event.target.checked ? {tasksSupported: true} : {};
-            let calendars = await mc.calendars.query(capability);
+            let calendars = await calendarManager.getCalendars(capability);
             populateCalendars(calendars, calList);
         });
     });
@@ -179,47 +164,6 @@ const saveTask = async (evt) => {
 
 saveTaskButton.addEventListener('click', saveTask);
 
-
-/* board display */
-let getElapsedTime  = (task) => {
-    let duration = 0;
-
-    task.timeSlices.forEach((item) => {
-        if (item !== null) {
-            console.log,(item.due, item.dtstart,new Date(item.due) - new Date(item.dtstart) );
-            duration += new Date(item.due) - new Date(item.dtstart);
-        }
-    });
-    
-    task.children.forEach((item) => {
-        if (item !== null)
-            duration += getElapsedTime(item);
-    });
-
-    return duration;
-};
-
-
-let removeTask = async (task) => {
-    task.timeSlices.forEach(async (item) => {
-        await mc.items.remove(calendarId,item.uid);
-    });
-    task.children.forEach(async (item) => {
-        await removeTask(item);
-    });
-};
-
-
-let getDate = () => {
-    let date = new Date();
-
-    return String(date.getFullYear()).padStart(4,"0") + "-" +
-        String(date.getMonth()).padStart(2,"0") + "-" +
-        String(date.getDate()).padStart(2,"0") + "T" +
-        String(date.getHours()).padStart(2,"0") + ":" +
-        String(date.getMinutes()).padStart(2,"0") + ":" +
-        String(date.getSeconds()).padStart(2,"0");
-};
 
 let displayElapsedTime = (elt, value) => {
     // here, the value is in milliseconds
@@ -334,53 +278,14 @@ let updateBoard = async() => {
     processMap(taskTree, taskList);
 };
 
-/* task loading */
-
-populateTasks = async () => {
-    console.log("populate tasks");
-    if (calendarId === null) return;
-    let items = await mc.items.query({
-        type: "task", 
-        returnFormat: "jcal",
-        calendarId
-    });
-    let todoStack = [];
-    taskTree.clear();
-    tasks.clear();
-
-    items.forEach(item => {
-        let todo = asTodo(item);
-        todo.children = new Map();
-        todo.timeSlices = new Map();
-
-        tasks.set(todo.uid, todo);
-
-        // something is strange there, especially in case of synchronisation error
-        if (todo.relatedTo || todo.xIcanbanParent) {
-            todoStack.push(todo);
-        } else {
-            taskTree.set(todo.uid, todo);
-        }
-
-        todoStack.forEach(elt => {
-            if (elt.relatedTo || elt.xIcanbanParent) {
-                if (elt.status === 'NEEDS-ACTION') {
-                    tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
-                        .children.set(elt.uid, elt);
-                } else {
-                    tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
-                        .timeSlices.set(elt.uid, elt);
-                }
-            }        
-        });
-    });
-};
-
 updateFrequency = await getStorage("timetracker-update-frequency") ?? {};
-calendarId = await getStorage("timetracker-calendar") ?? {};
+calendarId = await getStorage("timetracker-calendar") ?? null;
+
+calendarManager.setId(calendarId);
+await taskManager.refreshAllTasks();
 
 let refresh = async () => {
-    await populateTasks();
+    await taskManager.refreshAllTasks();
     updateBoard();
 };
 
@@ -391,7 +296,7 @@ let mock = async(item) => {
 
 refresh();
 
-if (globalThis.messenger !== undefined) {
+/*if (globalThis.messenger !== undefined) {
     mc.items.onCreated.addListener(populateTasks);
     //mc.items.onUpdated.addListener(populateTasks);
     mc.items.onRemoved.addListener(populateTasks);
@@ -399,4 +304,4 @@ if (globalThis.messenger !== undefined) {
     mc.items.addEventListener("created", populateTasks);
     mc.items.addEventListener("updated", populateTasks);
     mc.items.addEventListener("removed", populateTasks);
-}
+}*/
