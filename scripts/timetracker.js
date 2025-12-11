@@ -8,7 +8,6 @@
 
 import './i18n.js';
 
-import * as JCAL from './jcal.js';
 import {marked} from '../vendor/marked.esm.js';
 import {TaskManager} from './taskmanager.js'; 
 import {CalendarManager} from './calendarmanager.js';
@@ -113,6 +112,7 @@ if (saveSettings) {
 
         setStorage("timetracker-update-frequency", updateFrequency);
         setStorage("timetracker-calendar", calendarId);
+        taskManager.setUpdateFrequency(updateFrequency);
 
         let modal = bootstrap.Modal.getInstance(document.getElementById("settingsModal"));
         modal.hide();    
@@ -141,22 +141,15 @@ const saveTask = async (evt) => {
     //let source = evt.target;
     let id = null; //evt.target.dataset.event;
     let item = taskManager.getTask(id);
-    if (title !== item.summary)
-        item.summary = title;
-    if (description !== item.description)
-        item.description = description;
+    let properties = {
+        summary: title,
+        description
+    };
+    if (id) properties.uid = id;
 
-    if (id !== "null") {
-        item.uid = id;
-        await mc.items.update(calendarId, id, {format: 'jcal', item: item.data});
-    } else {
-        item.type="task";
-        await mc.items.create(calendarId, {type: 'task', format: 'jcal', item: item.data});
-    }
+    await taskManager.saveTask(item, properties );
     let modal = bootstrap.Modal.getInstance(document.getElementById("taskModal"));
     modal.hide();
-
-    //await populateTasks();
 };
 
 saveTaskButton.addEventListener('click', saveTask);
@@ -177,40 +170,12 @@ let startStopEvent = async(evt) => {
     let id = source.dataset.event;
 
     if (source.classList.contains("bi-play-fill")) {
-        let event = new JCAL.Todo();
-        event.summary = tasks.get(id).summary;
-        event.status = "IN-PROCESS";
-        event.dtstart = getDate(); 
-        event.due = getDate(); 
-
-        event.xIcanbanParent = event.relatedTo = id;
-        let result = await mc.items.create(calendarId, {
-            type: 'task', format: 'jcal', item: event.data
-        });
-        event.uid = result.id;
-        tasks.get(id).timeSlices.set(result.id, event);
-        // TODO: schedule updates
+        await taskManager.startTask(id);
     } else {
-        // event update: does async do damageable things in timeSlices?
-        let uid = '';
-        tasks.get(id).timeSlices.forEach((v) => {
-            if (v.status === "IN-PROCESS") {
-                uid = v.uid;
-            }
-        });
-
-        if (uid) {
-            let event = tasks.get(uid);
-            event.status = "COMPLETED";
-            event.due = getDate(); 
-
-            await mc.items.update(calendarId, uid, {
-                format: 'jcal', 
-                item: event.data
-            });
-        }
+        await taskManager.stopTask(id);
     }
 
+    // this part should be elsewhere
     let timeDisplay = document.getElementById(`duration-${id}`);
     let duration = getElapsedTime(tasks.get(id));
     displayElapsedTime(timeDisplay, duration);
@@ -232,7 +197,7 @@ let addSubTask = async(evt) => {
 let deleteTask = async(evt) => {
     let source = evt.target;
     let id = source.dataset.event;
-    await removeTask(source);
+    await taskManager.deleteTask(source);
     evt.preventDefault();
 };
 
@@ -245,11 +210,12 @@ let processMap = async(map, elt) => {
         summary.classList.add('list-group-item','d-flex','justify-content-between','align-items-start');
 
         details.id = `details-${k}`;
+        // we have to rework on this
         summary.insertAdjacentHTML("beforeend",`
                     ${v.summary}
                     <span id="duration-${k}"></span>
                     <span>
-                        <a class="bi-play-fill" data-event="${k}" id="play-${k}"></a>
+                        <a class="${v.running?'bi-play-fill':'bi-stop-fill'}" data-event="${k}" id="play-${k}"></a>
                         <a class="bi-trash3-fill" data-event="${k}" id="delete-${k}"></a>
                         <a class="bi-plus-lg" data-event="${k}" id="add-${k}"></a>
                     </span>
@@ -280,25 +246,14 @@ calendarId = await getStorage("timetracker-calendar") ?? null;
 
 calendarManager.setId(calendarId);
 await taskManager.refreshAllTasks();
+taskManager.setUpdateFrequency(updateFrequency);
 
 let refresh = async () => {
-    await taskManager.refreshAllTasks();
     updateBoard();
 };
 
 
-let mock = async(item) => {
-    console.log("mock",item);
-};
+
+
 
 refresh();
-
-/*if (globalThis.messenger !== undefined) {
-    mc.items.onCreated.addListener(populateTasks);
-    //mc.items.onUpdated.addListener(populateTasks);
-    mc.items.onRemoved.addListener(populateTasks);
-} else {
-    mc.items.addEventListener("created", populateTasks);
-    mc.items.addEventListener("updated", populateTasks);
-    mc.items.addEventListener("removed", populateTasks);
-}*/

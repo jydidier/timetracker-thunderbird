@@ -7,28 +7,64 @@ class TaskManager extends EventTarget {
     #taskTree = new Map();
     #calId = null;
     #calendarManager;
+    #intervalId;
 
-    constructor() {
+    constructor() { 
         super();
-        //this.refreshAllTasks(items);
+        this.#intervalId = 0;
     }
 
     setCalendarManager(cm) {
         this.#calendarManager = cm;
     }
 
-    initTask(obj) {
+    async startTask(uid) {
+        this.stopTask(uid);
+        let newTask = this.getTask();
+        let parentTask = this.getTask(uid);
 
-
+        await this.saveTask(newTask, {
+            summary : parentTask.summary,
+            status: 'IN-PROCESS',
+            dtstart: this.#getDate(),
+            due: this.#getDate(),
+            relatedTo: uid,
+            xIcanbanParent: uid,
+            running: true
+        });
     }
 
-    startTask(uid) {
+    setUpdateFrequency(f) {
+        if (this.#intervalId) {
+            clearInterval(this.#intervalId);
+        } 
 
+        if (parseInt(f) === -1) 
+            return ; 
 
+        const self = this;
+        this.#intervalId = setInterval(() => {
+            self.#tasks.forEach((item) => {
+                if (item.running) {
+                    self.saveTask(item, {
+                        due: this.#getDate()
+                    });
+                }
+            });
+            self.#emitUpdate();
+        }, parseInt(f));
     }
 
-    stopTask(uid) {
-
+    async stopTask(uid) {
+        this.#tasks.get(uid).timeSlices.forEach(async (item) => {
+            if (item.running) {
+                await this.saveTask(item, {
+                    due: this.#getDate(),
+                    status: 'COMPLETED',
+                    running: false
+                });
+            }
+        });
     }
 
     getTask(uid) {
@@ -38,6 +74,38 @@ class TaskManager extends EventTarget {
             return new JCAL.Todo();
     }
 
+    async saveTask(task, updateObject) {
+        if (updateObject !== undefined) 
+            Object.apply(task, updateObject); 
+
+
+        if (task.uid === null) {
+            if (this.#calendarManager) {
+                let result = await this.#calendarManager.createTask(task);
+                task.uid = result.id;
+            } else {
+                return;
+            }
+        } else {
+            if (this.#calendarManager) {
+                await this.#calendarManager.updateTask(task);
+            }
+        }
+
+        this.#tasks.set(task.uid, task);
+        if (task.relatedTo ?? task.xIcanbanParent) {
+            let parentTask = this.#tasks.get(task.relatedTo ?? task.xIcanbanParent);
+            if (task.status !== 'NEEDS-ACTION') {
+                parentTask.timeSlices.set(task.uid, task);
+            } else {
+                parentTask.children.set(task.uid, task);                        
+            }
+        } else {
+            this.#taskTree.set(task.uid, task);
+        }
+    }
+
+
 
     updateTask(uid, obj) {
         let task = this.#tasks.get(uid);
@@ -45,8 +113,6 @@ class TaskManager extends EventTarget {
         if (task === undefined) 
             return;
         if (this.#calendarManager) this.#calendarManager.updateTask(task);
-
-        this.#emitUpdated(task);
     }
 
 
@@ -59,7 +125,7 @@ class TaskManager extends EventTarget {
             this.#tasks.delete(item.uid);
             if (this.#calendarManager) 
                 this.#calendarManager.deleteTask(item.uid);
-            this.#emitDeleted(item);
+            //this.#emitDeleted(item);
         });
         task.children.forEach((item) => {
             deleteTask(item)
@@ -68,7 +134,6 @@ class TaskManager extends EventTarget {
         this.#tasks.delete(uid);
         if (this.#calendarManager)
             this.#calendarManager.deleteTask(uid);
-        this.#emitDeleted(task);
     }
 
 
@@ -78,14 +143,14 @@ class TaskManager extends EventTarget {
 
         let duration = 0;
         task.timeSlices.forEach((item) => {
-            if (item !== null) {
-                duration += new Date(item.due) - new Date(item.dtstart);
+            duration += new Date(item.due) - new Date(item.dtstart);
+            if (item.running) {
+                duration += new Date() - new Date(item.due);
             }
         });
 
         task.children.forEach((item) => {
-            if (item !== null)
-                duration += getElapsedTime(item);
+            duration += getElapsedTime(item);
         });
         return duration;
     }
@@ -151,16 +216,8 @@ class TaskManager extends EventTarget {
             String(date.getSeconds()).padStart(2,"0");
     };
 
-    #emitCreated(item) {
-        this.dispatchEvent(new CustomEvent("create", { item }));
-    }
-
-    #emitUpdated(item) {
-        this.dispatchEvent(new CustomEvent("update", { item }));
-    }
-
-    #emitDeleted(item) {
-        this.dispatchEvent(new CustomEvent("delete", { item }));
+    #emitUpdate() {
+        this.dispatchEvent(new CustomEvent("update"));
     }
 
 };
