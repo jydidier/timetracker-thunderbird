@@ -64,3 +64,5 @@ class CalendarManager {
 
 
 };
+
+export {CalendarManager};

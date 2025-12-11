@@ -17,7 +17,6 @@ import {CalendarManager} from './calendarmanager.js';
 let capability = {};
 let calendarId = null;
 let updateFrequency = -1;
-let populateTasks = async () => {};
 
 const calendarManager = new CalendarManager(calendarId);
 const taskManager = new TaskManager();
@@ -77,9 +76,9 @@ if (settingsModal) {
         let calendarCapability = document.getElementById('calendarCapability');
         let updateFrequencyField = document.getElementById('updateFrequency');
 
-        //updateFrequencyField.value = String(updateFrequency);
-
-        document,querySelector(`#updateFrequency input[value="${updateFrequency}"]`).selected = true;
+        updateFrequencyField.value = String(updateFrequency);
+        console.log({updateFrequency});
+        document.querySelector(`#updateFrequency > option[value="${updateFrequency}"]`).selected = true;
 
         populateCalendars(calendars, calList); 
         
@@ -106,7 +105,7 @@ if (saveSettings) {
         calendarId = (calendarIds.length > 0)?calendarIds[0]:null;
 
         let updateFrequencyField = document.getElementById('updateFrequency');
-        updateFrequencyField.value = updateFrequency;
+        updateFrequency = updateFrequencyField.value;
 
         // in case of changes, we should 
         // 1/ stop all current task
@@ -140,10 +139,8 @@ const saveTask = async (evt) => {
     let description = document.getElementById('taskDescription').value;
 
     //let source = evt.target;
-    let id = "null"; //evt.target.dataset.event;
-    let item = (id !== "null") ?
-        asTodo(await mc.items.get(calendarId, id, { returnFormat: "jcal" })) :
-        new JCAL.Todo();
+    let id = null; //evt.target.dataset.event;
+    let item = taskManager.getTask(id);
     if (title !== item.summary)
         item.summary = title;
     if (description !== item.description)
@@ -275,10 +272,10 @@ let processMap = async(map, elt) => {
 let updateBoard = async() => {
     let taskList = document.getElementById("taskList");
     taskList.textContent = '';
-    processMap(taskTree, taskList);
+    processMap(taskManager.getTaskMap(), taskList);
 };
 
-updateFrequency = await getStorage("timetracker-update-frequency") ?? {};
+updateFrequency = await getStorage("timetracker-update-frequency") ?? "-1";
 calendarId = await getStorage("timetracker-calendar") ?? null;
 
 calendarManager.setId(calendarId);

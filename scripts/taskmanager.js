@@ -9,6 +9,7 @@ class TaskManager extends EventTarget {
     #calendarManager;
 
     constructor() {
+        super();
         //this.refreshAllTasks(items);
     }
 
@@ -30,12 +31,20 @@ class TaskManager extends EventTarget {
 
     }
 
+    getTask(uid) {
+        if (uid !== undefined && this.#tasks.has(uid))
+            return this.#tasks(uid);
+        else 
+            return new JCAL.Todo();
+    }
+
 
     updateTask(uid, obj) {
         let task = this.#tasks.get(uid);
         Object.apply(task,obj);
         if (task === undefined) 
             return;
+        if (this.#calendarManager) this.#calendarManager.updateTask(task);
 
         this.#emitUpdated(task);
     }
@@ -47,19 +56,25 @@ class TaskManager extends EventTarget {
             return ;
 
         task.timeSlices.forEach((item) => {
+            this.#tasks.delete(item.uid);
+            if (this.#calendarManager) 
+                this.#calendarManager.deleteTask(item.uid);
             this.#emitDeleted(item);
         });
         task.children.forEach((item) => {
             deleteTask(item)
         });
 
+        this.#tasks.delete(uid);
+        if (this.#calendarManager)
+            this.#calendarManager.deleteTask(uid);
         this.#emitDeleted(task);
     }
 
+
     getElapsedTime(uid) {
         let task = this.#tasks.get(uid);
-        if (!task)
-            return;
+        if (!task) return;
 
         let duration = 0;
         task.timeSlices.forEach((item) => {
@@ -75,6 +90,9 @@ class TaskManager extends EventTarget {
         return duration;
     }
 
+    getTaskMap() {
+        return this.#taskTree;
+    }
 
     asTodo(item) {
         if (item.formats){
@@ -90,7 +108,7 @@ class TaskManager extends EventTarget {
 
 
     async refreshAllTasks() {
-        if (!cm) return ;
+        if (!this.#calendarManager) return ;
         const taskStack = [];
         this.#taskTree.clear();
         this.#tasks.clear();
