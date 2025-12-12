@@ -213,17 +213,16 @@ class TaskManager extends EventTarget {
         todoStack.forEach(elt => {
             if (elt.relatedTo || elt.xIcanbanParent) {
                 if (elt.status === 'NEEDS-ACTION') {
-                    this.#tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
-                        .children.set(elt.uid, elt);
+                    if (this.#tasks.has(elt.relatedTo ?? elt.xIcanbanParent))
+                        this.#tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
+                            .children.set(elt.uid, elt);
                 } else {
-                    this.#tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
-                        .timeSlices.set(elt.uid, elt);
+                    if (this.#tasks.has(elt.relatedTo ?? elt.xIcanbanParent))
+                        this.#tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
+                            .timeSlices.set(elt.uid, elt);
                 }
             }
         });
-        //});
-
-        console.log(this.#tasks, this.#taskTree);
     }
 
     #getDate() {

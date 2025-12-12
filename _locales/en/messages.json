@@ -126,7 +126,9 @@
     "help3" : {
         "message" : "",
         "description" : "Third paragraph of help modal dialog"
+    },
+    "confirmDeletionMessage" : {
+        "message" : "Are your sure to remove this task?",
+        "description": "Task removal confirmation message"
     }
-
-
 }

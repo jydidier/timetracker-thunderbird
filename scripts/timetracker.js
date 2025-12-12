@@ -244,7 +244,10 @@ let addSubTask = async(evt) => {
 
 
 let deleteTask = async(evt) => {
-    console.log("deleteTask");
+    if (!confirm(browser.i18n.getMessage("confirmDeletionMessage")))
+        return ;
+
+
     let source = evt.target;
     let id = source.dataset.event;
     await taskManager.deleteTask(id);

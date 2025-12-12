@@ -126,7 +126,9 @@
     "help3" : {
         "message" : "",
         "description" : "Third paragraph of help modal dialog"
+    },
+    "confirmDeletionMessage" : {
+        "message" : "Voulez vous vraiment supprimer cette tâche ?",
+        "description": "Message de confirmation pour la suppression d'une tâche"
     }
-
-
 }
