@@ -227,6 +227,8 @@ let startStopEvent = async(evt) => {
 
     source.classList.toggle("bi-play-fill");
     source.classList.toggle("bi-stop-fill");
+    source.classList.toggle("btn-outline-success");
+    source.classList.toggle("btn-outline-danger");
     evt.preventDefault();
 };
 
@@ -263,15 +265,16 @@ let processMap = async(map, elt) => {
         if (v.children && v.children.size === 0) {
             summary.insertAdjacentHTML("beforeend",`
                 <span class="d-flex justify-content-between align-items-start g-0 full-right">
-                            <div>
+                            <div class="task-item">
                                 <b>${v.summary}</b>
                                 <br/>
                                 <span id="duration-${k}" class="duration" data-event="${k}"></span>
                             </div>
                             <span>
-                                <a class="${!v.running?'bi-play-fill':'bi-stop-fill'} primary" data-event="${k}" id="play-${k}"></a>
-                                <a class="bi-trash3-fill" data-event="${k}" id="delete-${k}"></a>
-                                <a class="bi-plus-lg" data-parent="${k}" id="add-${k}" data-bs-toggle="modal" data-bs-target="#taskModal"></a>
+                                <a class="${!v.running?'bi-play-fill':'bi-stop-fill'} btn btn-outline-success btn-sm" data-event="${k}" id="play-${k}"></a>
+                                <a class="bi-pencil-fill btn btn-outline-primary btn-sm" data-event="${k}" id="edit-${k}" data-bs-toggle="modal" data-bs-target="#taskModal"></a>
+                                <a class="bi-trash3-fill btn btn-outline-primary btn-sm" data-event="${k}" id="delete-${k}"></a>
+                                <a class="bi-plus-lg btn btn-outline-primary btn-sm" data-parent="${k}" id="add-${k}" data-bs-toggle="modal" data-bs-target="#taskModal"></a>
                             </span>
                 </span>
             `);
@@ -280,14 +283,15 @@ let processMap = async(map, elt) => {
             summary.insertAdjacentHTML("beforeend",`
                 <span class="d-flex justify-content-between align-items-start g-0 full-right">
 
-                        <div>
+                        <div class="task-item">
                             <b>${v.summary}</b>
                             <br/>
                             <span id="duration-${k}" class="duration" data-event="${k}"></span>
                         </div>
                         <span>
-                            <a class="bi-trash3-fill" data-event="${k}" id="delete-${k}"></a>
-                            <a class="bi-plus-lg" data-parent="${k}" id="add-${k}" data-bs-toggle="modal" data-bs-target="#taskModal"></a>
+                            <a class="bi-pencil-fill btn btn-outline-primary btn-sm" data-event="${k}" id="edit-${k}" data-bs-toggle="modal" data-bs-target="#taskModal"></a>
+                            <a class="bi-trash3-fill btn btn-outline-primary btn-sm" data-event="${k}" id="delete-${k}"></a>
+                            <a class="bi-plus-lg btn btn-outline-primary btn-sm" data-parent="${k}" id="add-${k}" data-bs-toggle="modal" data-bs-target="#taskModal"></a>
                         </span>
                 </span>
             `);
@@ -295,6 +299,7 @@ let processMap = async(map, elt) => {
 
         details.appendChild(summary);
         summary.querySelector(`#delete-${k}`).addEventListener("click",deleteTask);
+        //summary.querySelector(`#edit-${k}`).addEventListener("click",deleteTask);
 
         let timeDisplay = summary.querySelector(`#duration-${k}`);
         let duration = taskManager.getElapsedTime(k);
@@ -303,7 +308,7 @@ let processMap = async(map, elt) => {
         if (v.children.size > 0) {
             //let li = document.createElement("li");
             //details.appendChild(li);
-            summary.appendChild(document.createElement("br"));
+            //summary.appendChild(document.createElement("br"));
             processMap(v.children, summary); //.querySelector(`#details-${k}`));
         }
         elt.appendChild(details);

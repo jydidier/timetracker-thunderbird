@@ -21,9 +21,17 @@ details > summary {
 }
 
 .task-list {
-    margin-left: 2rem;
-    margin-y: 2px;
-    padding-y: 2px;
-    list-style: none;
+    margin-top: 2px;
+    padding-top: 2px;
+    list-style-type: none;
+}
 
+.task-list > li {
+    margin-top: 2px;
+    padding-top: 4px;
+    padding-left: 2px;
+    border-top : 1px gray solid;
+}
+
+.task-item {
 }
