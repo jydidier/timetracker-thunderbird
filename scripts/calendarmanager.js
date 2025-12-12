@@ -28,6 +28,7 @@ class CalendarManager {
         let result = await mc.items.create(this.#id, {
             type: 'task', format: 'jcal', item: task.data
         });
+        console.log(result.id);
         return result.id;    
     }
 
@@ -39,7 +40,7 @@ class CalendarManager {
     }
 
     async deleteTask(task) {
-        await mc.items.delete(this.#id, task.uid);
+        await mc.items.remove(this.#id, task);
     }
 
     onCreated(callback) {

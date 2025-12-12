@@ -69,20 +69,20 @@ class TaskManager extends EventTarget {
 
     getTask(uid) {
         if (uid !== undefined && this.#tasks.has(uid))
-            return this.#tasks(uid);
+            return this.#tasks.get(uid);
         else 
             return new JCAL.Todo();
     }
 
     async saveTask(task, updateObject) {
         if (updateObject !== undefined) 
-            Object.apply(task, updateObject); 
+            Object.assign(task, updateObject); 
 
 
         if (task.uid === null) {
             if (this.#calendarManager) {
                 let result = await this.#calendarManager.createTask(task);
-                task.uid = result.id;
+                task.uid = result;
             } else {
                 return;
             }
@@ -91,6 +91,8 @@ class TaskManager extends EventTarget {
                 await this.#calendarManager.updateTask(task);
             }
         }
+
+        console.log({task});
 
         this.#tasks.set(task.uid, task);
         if (task.relatedTo ?? task.xIcanbanParent) {
@@ -101,6 +103,8 @@ class TaskManager extends EventTarget {
                 parentTask.children.set(task.uid, task);                        
             }
         } else {
+            task.timeSlices = new Map();
+            task.children = new Map();
             this.#taskTree.set(task.uid, task);
         }
     }
@@ -109,7 +113,7 @@ class TaskManager extends EventTarget {
 
     updateTask(uid, obj) {
         let task = this.#tasks.get(uid);
-        Object.apply(task,obj);
+        Object.assign(task,obj);
         if (task === undefined) 
             return;
         if (this.#calendarManager) this.#calendarManager.updateTask(task);
@@ -131,6 +135,13 @@ class TaskManager extends EventTarget {
             deleteTask(item)
         });
 
+        if (task.relatedTo ?? task.xIcanbanParent) {
+            let parent = this.#tasks.get(task.relatedTo ?? task.xIcanbanParent);
+            parent.children.delete(uid);
+        } else {
+            this.#taskTree.delete(uid);
+        }
+
         this.#tasks.delete(uid);
         if (this.#calendarManager)
             this.#calendarManager.deleteTask(uid);
@@ -138,25 +149,31 @@ class TaskManager extends EventTarget {
 
 
     getElapsedTime(uid) {
+        let self = this;
         let task = this.#tasks.get(uid);
         if (!task) return;
 
         let duration = 0;
         task.timeSlices.forEach((item) => {
-            duration += new Date(item.due) - new Date(item.dtstart);
             if (item.running) {
-                duration += new Date() - new Date(item.due);
+                duration += new Date(this.#getDate()) - new Date(item.dtstart);
+            } else {
+                duration += new Date(item.due) - new Date(item.dtstart);
             }
         });
 
         task.children.forEach((item) => {
-            duration += getElapsedTime(item);
+            duration += this.getElapsedTime(item.uid);
         });
         return duration;
     }
 
     getTaskMap() {
         return this.#taskTree;
+    }
+
+    getTasks() {
+        return this.#tasks;
     }
 
     asTodo(item) {
@@ -174,36 +191,39 @@ class TaskManager extends EventTarget {
 
     async refreshAllTasks() {
         if (!this.#calendarManager) return ;
-        const taskStack = [];
+        const todoStack = [];
         this.#taskTree.clear();
         this.#tasks.clear();
 
-        let items = await cm.getTasks();
+        let items = await this.#calendarManager.getTasks();
 
         items.forEach(item => {
             let todo = this.asTodo(item);
             todo.children = new Map();
             todo.timeSlices = new Map();                                                                 
-            tasks.set(todo.uid, todo);
+            this.#tasks.set(todo.uid, todo);
 
             if (todo.relatedTo || todo.xIcanbanParent) {
                 todoStack.push(todo);
             } else {
-                taskTree.set(todo.uid, todo);
+                this.#taskTree.set(todo.uid, todo);
             }
-
-            todoStack.forEach(elt => {
-                if (elt.relatedTo || elt.xIcanbanParent) {
-                    if (elt.status === 'NEEDS-ACTION') {
-                        tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
-                            .children.set(elt.uid, elt);
-                    } else {
-                        tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
-                            .timeSlices.set(elt.uid, elt);
-                    }
-                }
-            });
         });
+
+        todoStack.forEach(elt => {
+            if (elt.relatedTo || elt.xIcanbanParent) {
+                if (elt.status === 'NEEDS-ACTION') {
+                    this.#tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
+                        .children.set(elt.uid, elt);
+                } else {
+                    this.#tasks.get(elt.relatedTo ?? elt.xIcanbanParent)
+                        .timeSlices.set(elt.uid, elt);
+                }
+            }
+        });
+        //});
+
+        console.log(this.#tasks, this.#taskTree);
     }
 
     #getDate() {

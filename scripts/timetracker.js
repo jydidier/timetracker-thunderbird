@@ -19,6 +19,7 @@ let updateFrequency = -1;
 
 const calendarManager = new CalendarManager(calendarId);
 const taskManager = new TaskManager();
+taskManager.setCalendarManager(calendarManager);
 
 let interval = null;
 
@@ -125,6 +126,37 @@ if (saveSettings) {
 const taskModal = document.getElementById('taskModal');
 const saveTaskButton = document.getElementById('saveTask');
 
+if (taskModal) {
+    taskModal.addEventListener('show.bs.modal', async (event) => {
+        let id = event.relatedTarget.dataset.event;
+        let save = document.getElementById("saveTask");
+        if (!id) {
+            delete save.dataset.id;
+        } else {
+            save.dataset.event = id;
+        }
+        let parent = event.relatedTarget.dataset.parent;
+        if (!parent) {
+            delete save.dataset.parent;
+        } else {
+            save.dataset.parent = parent;
+        }
+        
+        if (!id) {
+            document.getElementById("taskTitle").value = "";
+            document.getElementById("taskDescription").value = "";
+        } else {
+            let task = taskManager.getTask(id);
+            if (task) {
+                document.getElementById("taskTitle").value = task.summary;
+                document.getElementById("taskDescription").value = task.description;
+            }
+        }
+    });
+}
+
+
+
 const saveTask = async (evt) => {
     //  here, we must add some controls
     let form = document.getElementById('taskForm');
@@ -138,18 +170,31 @@ const saveTask = async (evt) => {
     let title = document.getElementById('taskTitle').value;
     let description = document.getElementById('taskDescription').value;
 
+    console.log(evt.target.dataset);
+
     //let source = evt.target;
-    let id = null; //evt.target.dataset.event;
+    let id = evt.target.dataset.event;
+    let parent = evt.target.dataset.parent;
     let item = taskManager.getTask(id);
+    console.log({item});
     let properties = {
         summary: title,
-        description
+        description,
+        status: "NEEDS-ACTION",
+        timeSlices: new Map(),
+        children: new Map()
     };
+    if (parent) {
+        properties.relatedTo = parent;
+        properties.xIcanbanParent = parent;
+    }
+    
     if (id) properties.uid = id;
 
     await taskManager.saveTask(item, properties );
     let modal = bootstrap.Modal.getInstance(document.getElementById("taskModal"));
     modal.hide();
+    updateBoard();
 };
 
 saveTaskButton.addEventListener('click', saveTask);
@@ -177,7 +222,7 @@ let startStopEvent = async(evt) => {
 
     // this part should be elsewhere
     let timeDisplay = document.getElementById(`duration-${id}`);
-    let duration = getElapsedTime(tasks.get(id));
+    let duration = taskManager.getElapsedTime(id);
     displayElapsedTime(timeDisplay, duration);
 
     source.classList.toggle("bi-play-fill");
@@ -190,52 +235,82 @@ let addSubTask = async(evt) => {
     let source = evt.target;
     let id = source.dataset.event;
 
+
+
     evt.preventDefault();
 };
 
 
 let deleteTask = async(evt) => {
+    console.log("deleteTask");
     let source = evt.target;
     let id = source.dataset.event;
-    await taskManager.deleteTask(source);
+    await taskManager.deleteTask(id);
+    updateBoard();
     evt.preventDefault();
 };
 
 
 let processMap = async(map, elt) => {
+    let details = document.createElement("ul");
+    details.classList.add('task-list');
     map.forEach((v,k) => {
-        let details = document.createElement("ul");
-        details.classList.add('list-group');
         let summary = document.createElement("li");
-        summary.classList.add('list-group-item','d-flex','justify-content-between','align-items-start');
+        //summary.classList.add('list-group-item', 'g-0', 'full-right');
 
         details.id = `details-${k}`;
         // we have to rework on this
-        summary.insertAdjacentHTML("beforeend",`
-                    ${v.summary}
-                    <span id="duration-${k}"></span>
-                    <span>
-                        <a class="${v.running?'bi-play-fill':'bi-stop-fill'}" data-event="${k}" id="play-${k}"></a>
-                        <a class="bi-trash3-fill" data-event="${k}" id="delete-${k}"></a>
-                        <a class="bi-plus-lg" data-event="${k}" id="add-${k}"></a>
-                    </span>
-        `);
+        if (v.children && v.children.size === 0) {
+            summary.insertAdjacentHTML("beforeend",`
+                <span class="d-flex justify-content-between align-items-start g-0 full-right">
+                            <div>
+                                <b>${v.summary}</b>
+                                <br/>
+                                <span id="duration-${k}" class="duration" data-event="${k}"></span>
+                            </div>
+                            <span>
+                                <a class="${!v.running?'bi-play-fill':'bi-stop-fill'} primary" data-event="${k}" id="play-${k}"></a>
+                                <a class="bi-trash3-fill" data-event="${k}" id="delete-${k}"></a>
+                                <a class="bi-plus-lg" data-parent="${k}" id="add-${k}" data-bs-toggle="modal" data-bs-target="#taskModal"></a>
+                            </span>
+                </span>
+            `);
+            summary.querySelector(`#play-${k}`).addEventListener("click",startStopEvent);
+        } else {
+            summary.insertAdjacentHTML("beforeend",`
+                <span class="d-flex justify-content-between align-items-start g-0 full-right">
+
+                        <div>
+                            <b>${v.summary}</b>
+                            <br/>
+                            <span id="duration-${k}" class="duration" data-event="${k}"></span>
+                        </div>
+                        <span>
+                            <a class="bi-trash3-fill" data-event="${k}" id="delete-${k}"></a>
+                            <a class="bi-plus-lg" data-parent="${k}" id="add-${k}" data-bs-toggle="modal" data-bs-target="#taskModal"></a>
+                        </span>
+                </span>
+            `);
+        }
+
         details.appendChild(summary);
-        summary.querySelector(`#play-${k}`).addEventListener("click",startStopEvent);
         summary.querySelector(`#delete-${k}`).addEventListener("click",deleteTask);
 
         let timeDisplay = summary.querySelector(`#duration-${k}`);
-        let duration = getElapsedTime(tasks.get(k));
+        let duration = taskManager.getElapsedTime(k);
         displayElapsedTime(timeDisplay, duration);
 
         if (v.children.size > 0) {
-            processMap(v.children, details);
+            //let li = document.createElement("li");
+            //details.appendChild(li);
+            summary.appendChild(document.createElement("br"));
+            processMap(v.children, summary); //.querySelector(`#details-${k}`));
         }
         elt.appendChild(details);
     });
 };
 
-let updateBoard = async() => {
+let updateBoard = () => {
     let taskList = document.getElementById("taskList");
     taskList.textContent = '';
     processMap(taskManager.getTaskMap(), taskList);
@@ -248,12 +323,17 @@ calendarManager.setId(calendarId);
 await taskManager.refreshAllTasks();
 taskManager.setUpdateFrequency(updateFrequency);
 
-let refresh = async () => {
-    updateBoard();
-};
+updateBoard();
+
+// refreshing time
+setInterval(() => {
+    let elts = document.querySelectorAll('.duration');
+
+    elts.forEach((elt) => {
+        let duration = taskManager.getElapsedTime(elt.dataset.event);
+        displayElapsedTime(elt, duration);
+    });
+},1000);
 
 
-
-
-
-refresh();
+//refresh();

@@ -19,3 +19,11 @@ details {
 details > summary {
     font-size: 110%;
 }
+
+.task-list {
+    margin-left: 2rem;
+    margin-y: 2px;
+    padding-y: 2px;
+    list-style: none;
+
+}
